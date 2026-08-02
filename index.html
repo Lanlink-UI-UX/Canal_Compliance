@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canal de Compliance — Lanlink</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --azul-claro:#44c8f5;
+    --azul:#0085ff;
+    --azul-medio:#0829c7;
+    --azul-escuro:#080061;
+    --laranja:#ff7a00;
+    --amarelo:#F7D638;
+    --cinza-texto:#2b3040;
+    --cinza-suave:#8a92a3;
+    --cinza-linha:#e3e8f0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:'Nunito',sans-serif;
+    color:var(--cinza-texto);
+    background:#0a1030;
+    overflow:hidden;
+  }
+
+  /* Fundo animado com formas da marca */
+  .bg{position:fixed;inset:0;z-index:0;overflow:hidden;
+      background:linear-gradient(135deg,var(--azul-escuro) 0%,var(--azul-medio) 60%,#0546c9 100%);}
+  .blob{position:absolute;border-radius:50%;filter:blur(10px);opacity:.35;animation:float 14s ease-in-out infinite;}
+  .b1{width:340px;height:340px;background:var(--azul-claro);top:-90px;left:-70px;}
+  .b2{width:260px;height:260px;background:var(--azul);bottom:-70px;right:8%;animation-delay:-4s;}
+  .b3{width:180px;height:180px;background:var(--laranja);top:55%;left:-60px;opacity:.22;animation-delay:-8s;}
+  .b4{width:120px;height:120px;background:var(--amarelo);top:12%;right:12%;opacity:.25;animation-delay:-2s;}
+  @keyframes float{0%,100%{transform:translateY(0) translateX(0)}50%{transform:translateY(-28px) translateX(18px)}}
+
+  /* Topo */
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:5;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 30px;color:#fff;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand .logo{height:34px;width:auto;display:block;}
+  .brand .divider{width:1.5px;height:26px;background:rgba(255,255,255,.28);}
+  .brand .tag{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--azul-claro);line-height:1.3;}
+  .counter{font-size:12px;font-weight:700;color:#cfe0ff;background:rgba(255,255,255,.1);
+    padding:6px 14px;border-radius:30px;backdrop-filter:blur(4px);}
+
+  /* Barra de progresso */
+  .progress{position:fixed;top:0;left:0;height:4px;width:0%;z-index:6;
+    background:linear-gradient(90deg,var(--azul-claro),var(--amarelo),var(--laranja));
+    transition:width .5s cubic-bezier(.22,1,.36,1);box-shadow:0 0 10px rgba(68,200,245,.6);}
+
+  /* Palco das perguntas */
+  .stage{position:relative;z-index:2;height:100%;display:flex;align-items:center;justify-content:center;padding:80px 24px 100px;}
+  .slide{position:absolute;width:100%;max-width:720px;opacity:0;transform:translateY(40px);pointer-events:none;
+    transition:opacity .55s cubic-bezier(.22,1,.36,1),transform .55s cubic-bezier(.22,1,.36,1);}
+  .slide.active{opacity:1;transform:translateY(0);pointer-events:auto;}
+  .slide.leaving{opacity:0;transform:translateY(-40px);}
+
+  .qnum{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--azul-claro);margin-bottom:14px;}
+  .qnum img{width:15px;height:15px;}
+  .qtitle{font-size:30px;line-height:1.2;font-weight:800;color:#fff;margin-bottom:8px;}
+  .qtitle .req{color:var(--laranja);}
+  .qhint{font-size:14px;font-weight:400;color:#b9c6e6;line-height:1.5;margin-bottom:26px;max-width:640px;}
+
+  /* Opções */
+  .options{display:flex;flex-direction:column;gap:11px;}
+  .options.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+  .options.wide{max-width:640px;}
+  .opt{display:flex;align-items:center;gap:13px;cursor:pointer;
+    background:rgba(255,255,255,.07);border:1.6px solid rgba(255,255,255,.16);
+    border-radius:14px;padding:15px 18px;color:#eaf1ff;font-size:16px;font-weight:600;
+    transition:all .2s ease;backdrop-filter:blur(4px);}
+  .opt:hover{background:rgba(255,255,255,.14);border-color:var(--azul-claro);transform:translateX(4px);}
+  .opt.sel{background:rgba(68,200,245,.22);border-color:var(--azul-claro);box-shadow:0 6px 22px rgba(68,200,245,.25);}
+  .opt .key{width:26px;height:26px;flex:0 0 auto;border:2px solid rgba(255,255,255,.4);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#cfe0ff;transition:all .2s;}
+  .opt.radio .key{border-radius:50%;}
+  .opt.sel .key{background:var(--azul-claro);border-color:var(--azul-claro);color:#062;}
+  .opt.sel .key::after{content:'✓';color:var(--azul-escuro);}
+  .opt.sel .key .letter{display:none;}
+
+  /* Grid compacto para os temas */
+  .options.themes{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:52vh;overflow-y:auto;padding-right:6px;}
+  .options.themes .opt{padding:11px 13px;font-size:13.5px;gap:10px;}
+  .options.themes .opt .key{width:20px;height:20px;font-size:0;}
+  .options.themes::-webkit-scrollbar{width:6px;}
+  .options.themes::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);border-radius:3px;}
+
+  /* Campos de texto */
+  .field{width:100%;background:rgba(255,255,255,.07);border:none;border-bottom:2.4px solid rgba(255,255,255,.3);
+    color:#fff;font-family:'Nunito',sans-serif;font-size:20px;font-weight:600;padding:14px 6px;border-radius:8px 8px 0 0;
+    transition:border-color .2s,background .2s;}
+  .field::placeholder{color:rgba(255,255,255,.4);font-weight:400;}
+  .field:focus{outline:none;border-color:var(--azul-claro);background:rgba(255,255,255,.12);}
+  textarea.field{min-height:120px;resize:vertical;border:2px solid rgba(255,255,255,.22);border-radius:14px;font-size:16px;line-height:1.5;}
+
+  .fieldrow{display:flex;flex-direction:column;gap:16px;}
+
+  /* Botões navegação */
+  .actions{display:flex;align-items:center;gap:14px;margin-top:30px;flex-wrap:wrap;}
+  .btn{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;cursor:pointer;border:none;
+    padding:14px 30px;border-radius:12px;transition:all .2s ease;display:inline-flex;align-items:center;gap:9px;}
+  .btn-primary{background:linear-gradient(120deg,var(--azul-claro),var(--azul));color:#052a52;box-shadow:0 8px 24px rgba(68,200,245,.35);}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(68,200,245,.5);}
+  .btn-ghost{background:transparent;color:#b9c6e6;padding:14px 10px;}
+  .btn-ghost:hover{color:#fff;}
+  .btn-home{background:rgba(255,255,255,.08);color:#cfe0ff;padding:14px 18px;border:1.5px solid rgba(255,255,255,.18);}
+  .btn-home:hover{background:rgba(255,255,255,.16);color:#fff;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+  .btn img{width:17px;height:17px;}
+  .btn-home img{width:16px;height:16px;}
+  .enterhint{font-size:12px;color:#8fa0c8;font-weight:600;}
+  .enterhint b{color:#cfe0ff;}
+  .spacer{flex:1 1 auto;}
+
+  /* Tela de boas-vindas */
+  .welcome .hero-ic{width:74px;height:74px;margin-bottom:20px;}
+  .welcome h1{font-size:42px;font-weight:900;color:#fff;line-height:1.1;margin-bottom:16px;}
+  .welcome p{font-size:16px;color:#c6d3f0;line-height:1.6;max-width:600px;margin-bottom:12px;}
+  .welcome .meta{display:flex;gap:22px;flex-wrap:wrap;margin:24px 0 6px;}
+  .welcome .meta div{font-size:13px;color:#cfe0ff;display:flex;align-items:center;gap:8px;font-weight:700;}
+  .welcome .meta img{width:18px;height:18px;flex:0 0 auto;}
+
+  /* Tela de revisão / resumo */
+  .review .qtitle{margin-bottom:8px;}
+  .summary{max-height:44vh;overflow-y:auto;display:flex;flex-direction:column;gap:2px;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:8px;margin-bottom:8px;}
+  .sum-row{padding:11px 15px;border-radius:11px;}
+  .sum-row:nth-child(odd){background:rgba(255,255,255,.045);}
+  .sum-q{font-size:12px;font-weight:700;color:#8fd8ff;margin-bottom:3px;}
+  .sum-a{font-size:15px;font-weight:600;color:#eaf1ff;line-height:1.4;word-break:break-word;}
+  .sum-a.empty{color:#7f8dba;font-style:italic;font-weight:500;}
+  .summary::-webkit-scrollbar{width:6px;}
+  .summary::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);border-radius:3px;}
+  .sendnote{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:#cfe0ff;font-weight:600;
+    background:rgba(68,200,245,.10);border:1px solid rgba(68,200,245,.28);border-radius:12px;padding:12px 15px;margin-bottom:4px;line-height:1.45;}
+  .sendnote img{width:17px;height:17px;flex:0 0 auto;margin-top:1px;}
+
+  /* Tela final */
+  .done{text-align:center;}
+  .done .check{width:96px;height:96px;margin:0 auto 22px;border-radius:50%;
+    background:linear-gradient(120deg,var(--azul-claro),var(--azul));display:flex;align-items:center;justify-content:center;
+    animation:pop .5s cubic-bezier(.22,1.4,.5,1);}
+  .done .check img{width:46px;height:46px;}
+  @keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+  .done h1{font-size:36px;font-weight:900;color:#fff;margin-bottom:14px;}
+  .done p{font-size:16px;color:#c6d3f0;line-height:1.6;max-width:560px;margin:0 auto 8px;}
+  .done .heart{display:inline-block;vertical-align:-3px;margin-left:2px;}
+  .done .heart img{width:17px;height:17px;}
+
+  .footnote{position:fixed;bottom:0;left:0;right:0;z-index:5;text-align:center;
+   padding:12px;font-size:11px;color:#cfe0ff;font-weight:600;letter-spacing:.4px;}
+
+  @media(max-width:640px){
+    .qtitle{font-size:23px;}
+    .welcome h1{font-size:32px;}
+    .options.grid2,.options.themes{grid-template-columns:1fr;}
+    .topbar{padding:14px 18px;}
+    .brand .logo{height:28px;}
+  }
+</style>
+</head>
+<body>
+<div class="bg"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span></div>
+<div class="progress" id="progress"></div>
+
+<div class="topbar">
+  <div class="brand">
+    <img class="logo" src="assets/logo/lanlink-logo-branca.png" alt="Lanlink">
+    <span class="divider"></span>
+    <span class="tag">canal de<br>compliance</span>
+  </div>
+  <div class="counter" id="counter" style="opacity:0">—</div>
+</div>
+
+<div class="stage" id="stage"></div>
+
+<div class="footnote">Suas informações são tratadas com sigilo pela área de Compliance da Lanlink.</div>
+
+<script>
+/* ===== Ícones minimalistas (arquivos externos em assets/icons) ===== */
+const IX = 'assets/icons/';
+const IC = {
+  hero:`<img class="hero-ic" src="${IX}compliance 4.png" alt="">`,
+  clock:`<img src="${IX}clock.svg" alt="">`,
+  lock:`<img src="${IX}lock.svg" alt="">`,
+  anon:`<img src="${IX}anon.svg" alt="">`,
+  arrow:`<img src="${IX}arrow.svg" alt="">`,
+  send:`<img src="${IX}send.svg" alt="">`,
+  chev:`<img src="${IX}chevron.svg" alt="">`,
+  checkbig:`<img src="${IX}check.svg" alt="">`,
+  heart:`<img src="${IX}heart.svg" alt="">`,
+  home:`<img src="${IX}home.svg" alt="">`,
+  review:`<img src="${IX}review.svg" alt="">`
+};
+
+/* ====== Definição das perguntas com lógica condicional ====== */
+const T = [
+  {type:'radio', id:'identificar', num:1, req:true,
+   title:'Você deseja se identificar?',
+   hint:'A identificação pode ser importante para esclarecimento de dúvidas e retornos sobre o relato. Você também pode seguir de forma anônima.',
+   options:['Sim','Não']},
+
+  {type:'fields', id:'dados', num:'1a', req:false, showIf:s=>s.identificar==='Sim',
+   title:'Certo! Como podemos te contatar?',
+   hint:'Preencha seus dados para retorno. Essas informações ficam restritas à área de Compliance.',
+   fields:[
+     {k:'nome', ph:'Nome completo'},
+     {k:'cpf', ph:'CPF'},
+     {k:'email', ph:'E-mail'},
+     {k:'telefone', ph:'Telefones (fixo ou móvel)'}
+   ]},
+
+  {type:'radio', id:'relacao', num:2, req:true,
+   title:'Qual a sua relação com a Lanlink?',
+   options:['Colaborador','Ex-colaborador','Cliente','Fornecedor','Consultor','Parceiro Comercial','Prestador de Serviços','Outra']},
+
+  {type:'text', id:'relacaoOutra', num:'2a', req:false, showIf:s=>s.relacao==='Outra',
+   title:'Descreva sua relação com a Lanlink.',
+   ph:'Ex.: estagiário terceirizado, visitante...'},
+
+  {type:'radio', id:'empresa', num:3, req:true,
+   title:'A que empresa está relacionada a violação?',
+   options:['Lanlink Informática','Lanlink Soluções','Lanlink Serviços','Trust Control','Canal de Vendas','Parceiro','Fornecedor']},
+
+  {type:'radio', id:'ocorrencia', num:4, req:true,
+   title:'Quanto à ocorrência da violação:',
+   options:['Ela pode ocorrer','Está ocorrendo','Já ocorreu']},
+
+  {type:'text', id:'local', num:5, req:true,
+   title:'Qual o Estado e a Cidade relacionados à violação?',
+   ph:'Ex.: Fortaleza – CE'},
+
+  {type:'check', id:'tema', num:6, req:true,
+   title:'A que tema se relaciona a violação?',
+   hint:'Você pode marcar mais de uma opção.',
+   options:['Assédio Sexual','Assédio Moral','Agressão','Discriminação ou retaliação','Violação à Lei Anticorrupção','Violação a Leis Trabalhistas','Violação da Lei de Licitações','Violação de Leis Tributárias','Violação de outras leis','Fraude ou roubo de dinheiro','Vazamento ou uso indevido de informações','Irregularidade em relatórios da Gestão','Irregularidade nas demonstrações financeiras','Favorecimento de Fornecedor','Favorecimento de Clientes','Conflito de interesses','Roubo, furto ou desvio de materiais','Dano de bens da Empresa','Relacionamento familiar com subordinação direta','Relacionamento afetivo com subordinação direta','Uso indevido de recursos da Lanlink','Uso indevido do nome da Empresa','Violação de Políticas e/ou procedimentos','Comportamento inadequado','Sabotagem','Outra']},
+
+  {type:'text', id:'temaOutra', num:'6a', req:false, showIf:s=>Array.isArray(s.tema)&&s.tema.includes('Outra'),
+   title:'Especifique qual foi a "outra" violação.',
+   ph:'Descreva o tema da violação...'},
+
+  {type:'radio', id:'conhecimento', num:7, req:true,
+   title:'Sobre o conhecimento do fato:',
+   options:['Eu tenho certeza','Eu tenho suspeita','Outra pessoa me disse','Existe um boato sobre isso','Eu ouvi de pessoas de fora da empresa']},
+
+  {type:'radio', id:'liderCiente', num:8, req:true,
+   title:'Você sabe se algum líder está ciente do fato?',
+   options:['Sim','Não']},
+
+  {type:'text', id:'liderNome', num:'8a', req:false, showIf:s=>s.liderCiente==='Sim',
+   title:'Qual o nome do Líder?',
+   ph:'Nome do líder'},
+
+  {type:'radio', id:'supEnvolvido', num:9, req:true,
+   title:'Você sabe se algum supervisor está envolvido no fato?',
+   options:['Sim','Não']},
+
+  {type:'text', id:'supNome', num:'9a', req:false, showIf:s=>s.supEnvolvido==='Sim',
+   title:'Qual o nome do supervisor envolvido?',
+   ph:'Nome do supervisor'},
+
+  {type:'radio', id:'esconder', num:10, req:true,
+   title:'Você sabe se algum líder/supervisor tentou esconder o fato?',
+   options:['Sim','Não']},
+
+  {type:'textarea', id:'fato', num:11, req:true,
+   title:'Qual o fato que você deseja relatar?',
+   hint:'Descreva com o máximo de detalhes: o que aconteceu, quem estava envolvido, quando ocorreu e se ainda continua ocorrendo.',
+   ph:'Conte o que aconteceu...'},
+
+  {type:'textarea', id:'evidencias', num:12, req:true,
+   title:'Existem evidências que comprovam o fato? Quais?',
+   hint:'Documentos, locais e testemunhas. IMPORTANTE: não remova nem tome contato com qualquer evidência, pois a investigação pode ser prejudicada.',
+   ph:'Descreva as evidências...'},
+
+  {type:'text', id:'valor', num:13, req:true,
+   title:'Você tem noção do valor financeiro envolvido no fato?',
+   hint:'Se não souber, pode escrever "não sei" ou "não se aplica".',
+   ph:'Ex.: R$ 5.000,00 / Não se aplica'},
+
+  {type:'radio', id:'temSugestao', num:14, req:true,
+   title:'Você tem sugestão de como o fato deve ser resolvido?',
+   options:['Sim','Não']},
+
+  {type:'textarea', id:'sugestao', num:'14a', req:false, showIf:s=>s.temSugestao==='Sim',
+   title:'Detalhe a sua sugestão.',
+   ph:'Descreva sua sugestão...'}
+];
+
+const state = {};
+const stage = document.getElementById('stage');
+const progress = document.getElementById('progress');
+const counter = document.getElementById('counter');
+
+function visible(){ return T.filter(q => !q.showIf || q.showIf(state)); }
+function esc(s){ return (''+s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+let stepKey = 'welcome'; // 'welcome' | index | 'review' | 'done'
+let current = null;
+
+function letter(i){ return String.fromCharCode(65+i); }
+
+/* monta o resumo de todas as respostas preenchidas */
+function summaryRows(){
+  const list = visible();
+  let html = '';
+  list.forEach(q=>{
+    let val = state[q.id];
+    if(q.type==='fields'){
+      const d = val||{};
+      const parts=[];
+      if(d.nome) parts.push('Nome: '+d.nome);
+      if(d.cpf) parts.push('CPF: '+d.cpf);
+      if(d.email) parts.push('E-mail: '+d.email);
+      if(d.telefone) parts.push('Telefones: '+d.telefone);
+      val = parts.join(' · ');
+    } else if(Array.isArray(val)){
+      val = val.join(', ');
+    }
+    const empty = (val===undefined || val===null || (''+val).trim()==='');
+    const shown = empty ? 'Não informado' : esc(val);
+    html += `<div class="sum-row">
+        <div class="sum-q">${esc(q.title)}</div>
+        <div class="sum-a${empty?' empty':''}">${shown}</div>
+      </div>`;
+  });
+  return html;
+}
+
+/* Navegação segura por ID da pergunta (evita índices inválidos com a lista dinâmica) */
+function nextFrom(q){
+  const list = visible();
+  const i = list.findIndex(x=>x.id===q.id);
+  if(i===-1 || i>=list.length-1){ go('review'); }
+  else { go(i+1); }
+}
+function prevFrom(q){
+  const list = visible();
+  const i = list.findIndex(x=>x.id===q.id);
+  if(i<=0){ go('welcome'); } else { go(i-1); }
+}
+
+function render(){
+  const list = visible();
+  const total = list.length;
+  let node;
+
+  // Trava de segurança: se o índice numérico ficou fora do intervalo
+  // (por causa das perguntas condicionais), vai direto para a revisão.
+  if(typeof stepKey==='number' && (stepKey<0 || stepKey>=total)){
+    stepKey='review';
+  }
+
+  if(stepKey==='welcome'){
+    counter.style.opacity=0;
+    node = el(`<div class="slide welcome">
+      ${IC.hero}
+      <h1>Canal de Compliance</h1>
+      <p>Este é um espaço seguro para relatar violações ao Sistema de Gestão de Compliance da Lanlink. Vamos fazer isso <b>uma pergunta de cada vez</b>, leva poucos minutos.</p>
+      <p>Sua manifestação será avaliada pela área de Compliance e submetida à Presidência em até <b>60 dias</b>.</p>
+      <div class="meta">
+        <div>${IC.clock} ~3 minutos</div><div>${IC.lock} Sigiloso</div><div>${IC.anon} Anônimo se preferir</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" id="start">Começar ${IC.arrow}</button>
+      </div>
+    </div>`);
+    stage.appendChild(node);
+    requestAnimationFrame(()=>node.classList.add('active'));
+    node.querySelector('#start').onclick=()=>go(0);
+    return;
+  }
+
+  if(stepKey==='review'){
+    counter.style.opacity=1;
+    counter.textContent = 'Revisão';
+    progress.style.width='100%';
+    node = el(`<div class="slide review">
+      <div class="qnum">${IC.review} Revisão do relato</div>
+      <div class="qtitle">Confira suas respostas antes de enviar</div>
+      <div class="qhint">Revise abaixo tudo o que você preencheu. Se algo estiver incompleto, é só voltar e ajustar.</div>
+      <div class="summary">${summaryRows()}</div>
+      <div class="sendnote">${IC.lock} Ao enviar, este relato será encaminhado diretamente à equipe de Compliance da Lanlink, que fará a análise com total sigilo.</div>
+      <div class="actions">
+        <button class="btn btn-ghost" id="back">← Voltar e editar</button>
+        <button class="btn btn-home" id="home">${IC.home} Início</button>
+        <span class="spacer"></span>
+        <button class="btn btn-primary" id="send">Enviar relatório ${IC.send}</button>
+      </div>
+    </div>`);
+    stage.appendChild(node);
+    requestAnimationFrame(()=>node.classList.add('active'));
+    node.querySelector('#back').onclick=()=>go(visible().length-1);
+    node.querySelector('#home').onclick=()=>go(0);
+    node.querySelector('#send').onclick=()=>go('done');
+    return;
+  }
+
+  if(stepKey==='done'){
+    progress.style.width='100%';
+    counter.style.opacity=0;
+    node = el(`<div class="slide done">
+      <div class="check">${IC.checkbig}</div>
+      <h1>Relato enviado com sucesso!</h1>
+      <p>Obrigado por sua coragem e confiança. Sua manifestação foi <b>enviada à equipe de Compliance da Lanlink</b> e será analisada com total sigilo.</p>
+      <p style="margin-top:14px">Você faz a Lanlink um lugar mais ético e seguro. <span class="heart">${IC.heart}</span></p>
+      <div class="actions" style="justify-content:center">
+        <button class="btn btn-ghost" id="restart">Fazer novo relato</button>
+      </div>
+    </div>`);
+    stage.appendChild(node);
+    requestAnimationFrame(()=>node.classList.add('active'));
+    node.querySelector('#restart').onclick=()=>{for(let k in state)delete state[k];go('welcome');};
+    return;
+  }
+
+  const idx = stepKey;
+  const q = list[idx];
+  current = q;
+  const pos = idx+1;
+  counter.style.opacity=1;
+  counter.textContent = `${pos} de ${total}`;
+  progress.style.width = ((idx)/total*100)+'%';
+
+  let inner = `<div class="qnum">${IC.chev}
+      Pergunta ${typeof q.num==='number'?q.num:pos}${q.req?'':' · opcional'}
+    </div>
+    <div class="qtitle">${q.title} ${q.req?'<span class="req">*</span>':''}</div>
+    ${q.hint?`<div class="qhint">${q.hint}</div>`:''}`;
+
+  if(q.type==='radio' || q.type==='check'){
+    const cls = q.type==='radio'?'radio':'check';
+    const grid = q.id==='tema' ? 'themes' : (q.options.length>4?'grid2':'');
+    inner += `<div class="options ${grid} wide">`;
+    q.options.forEach((o,i)=>{
+      const sel = q.type==='radio' ? state[q.id]===o
+                 : (state[q.id]||[]).includes(o);
+      inner += `<div class="opt ${cls} ${sel?'sel':''}" data-val="${o}">
+        <span class="key"><span class="letter">${letter(i)}</span></span>${o}</div>`;
+    });
+    inner += `</div>`;
+  }
+  else if(q.type==='text'){
+    inner += `<div class="fieldrow"><input class="field" id="inp" placeholder="${q.ph||'Digite aqui'}" value="${state[q.id]||''}"></div>`;
+  }
+  else if(q.type==='textarea'){
+    inner += `<div class="fieldrow"><textarea class="field" id="inp" placeholder="${q.ph||'Digite aqui'}">${state[q.id]||''}</textarea></div>`;
+  }
+  else if(q.type==='fields'){
+    inner += `<div class="fieldrow">`;
+    q.fields.forEach(f=>{ inner += `<input class="field" data-k="${f.k}" placeholder="${f.ph}" value="${(state[q.id]&&state[q.id][f.k])||''}">`; });
+    inner += `</div>`;
+  }
+
+  const isLast = idx === total-1;
+  // Botão "Início" aparece a partir da 3ª pergunta (após a segunda)
+  const homeBtn = idx>=2 ? `<button class="btn btn-home" id="home">${IC.home} Início</button>` : '';
+  inner += `<div class="actions">
+      <button class="btn btn-ghost" id="back">← Voltar</button>
+      ${homeBtn}
+      <span class="spacer"></span>
+      <button class="btn btn-primary" id="next">${isLast?`Revisar ${IC.arrow}`:`Continuar ${IC.arrow}`}</button>
+    </div>`;
+
+  node = el(`<div class="slide">${inner}</div>`);
+  stage.appendChild(node);
+  requestAnimationFrame(()=>node.classList.add('active'));
+
+  node.querySelectorAll('.opt').forEach(op=>{
+    op.onclick=()=>{
+      const v = op.dataset.val;
+      if(q.type==='radio'){
+        state[q.id]=v;
+        node.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
+        op.classList.add('sel');
+        setTimeout(()=>nextFrom(q),260);
+      }else{
+        state[q.id]=state[q.id]||[];
+        if(state[q.id].includes(v)){state[q.id]=state[q.id].filter(x=>x!==v);op.classList.remove('sel');}
+        else{state[q.id].push(v);op.classList.add('sel');}
+      }
+    };
+  });
+  const back=node.querySelector('#back'); if(back) back.onclick=()=>prevFrom(q);
+  const home=node.querySelector('#home'); if(home) home.onclick=()=>go(0);
+  const next=node.querySelector('#next'); if(next) next.onclick=()=>advance(idx,q,node,isLast);
+
+  const inp = node.querySelector('#inp'); if(inp) setTimeout(()=>inp.focus(),400);
+}
+
+function advance(idx,q,node,isLast){
+  if(q.type==='text'||q.type==='textarea'){ state[q.id]=node.querySelector('#inp').value.trim(); }
+  if(q.type==='fields'){ const o={}; node.querySelectorAll('[data-k]').forEach(i=>o[i.dataset.k]=i.value.trim()); state[q.id]=o; }
+  if(q.req){
+    const v = state[q.id];
+    const empty = q.type==='check' ? !(v&&v.length) : !(v&&(''+v).length);
+    if(empty){ shake(node); return; }
+  }
+  // ao terminar as perguntas, vai para a tela de REVISÃO (não direto para o envio).
+  // Navega pelo ID (não pelo índice) para funcionar com a lista dinâmica de condicionais.
+  nextFrom(q);
+}
+
+function go(target){
+  const cur = stage.querySelector('.slide.active');
+  if(cur){ cur.classList.add('leaving'); cur.classList.remove('active');
+    setTimeout(()=>cur.remove(),450); }
+  stepKey = target;
+  setTimeout(render, cur?120:0);
+}
+
+function shake(node){
+  node.animate([{transform:'translateX(0)'},{transform:'translateX(-9px)'},{transform:'translateX(9px)'},{transform:'translateX(0)'}],{duration:280});
+}
+
+function el(html){const d=document.createElement('div');d.innerHTML=html.trim();return d.firstChild;}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter' && !e.shiftKey){
+    const active = stage.querySelector('.slide.active');
+    if(!active) return;
+    e.preventDefault();
+    const s=active.querySelector('#start'); if(s){s.click();return;}
+    const sd=active.querySelector('#send'); if(sd){sd.click();return;}
+    const r=active.querySelector('#restart'); if(r){r.click();return;}
+    const n=active.querySelector('#next'); if(n){n.click();return;}
+  }
+});
+
+render();
+</script>
+</body>
+</html>
